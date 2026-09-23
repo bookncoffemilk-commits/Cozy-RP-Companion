@@ -464,12 +464,12 @@ function parseAiStatus(data) {
             const [k, v] = item.split('=').map(s => s && s.trim());
             if (!k || !v) return;
             const kl = k.toLowerCase();
-            if (kl.includes('лок')) { state.location = v; document.getElementById('cz-v-loc').innerText = v; }
-            else if (kl.includes('комн')) { state.room = v; document.getElementById('cz-v-room').innerText = v; }
-            else if (kl.includes('врем')) { state.time = v; document.getElementById('cz-v-time').innerText = v; }
-            else if (kl.includes('погод')) { state.weather = v; document.getElementById('cz-v-weather').innerText = v; }
-            else if (kl.includes('одежд') || kl.includes('наряд')) { state.charOutfit = v; document.getElementById('cz-v-char-outfit').innerText = v; }
-            else if (kl.includes('рук')) { state.charHolding = v; document.getElementById('cz-v-char-holding').innerText = v; }
+            if (kl.includes('лок') || kl.includes('location')) { state.location = v; document.getElementById('cz-v-loc').innerText = v; }
+            else if (kl.includes('комн') || kl.includes('room')) { state.room = v; document.getElementById('cz-v-room').innerText = v; }
+            else if (kl.includes('врем') || kl.includes('time')) { state.time = v; document.getElementById('cz-v-time').innerText = v; }
+            else if (kl.includes('погод') || kl.includes('weather')) { state.weather = v; document.getElementById('cz-v-weather').innerText = v; }
+            else if (kl.includes('одежд') || kl.includes('наряд') || kl.includes('outfit')) { state.charOutfit = v; document.getElementById('cz-v-char-outfit').innerText = v; }
+            else if (kl.includes('рук') || kl.includes('holding')) { state.charHolding = v; document.getElementById('cz-v-char-holding').innerText = v; }
         });
     }
     updateChar();
