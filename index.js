@@ -494,22 +494,45 @@ function spawnAmbient() {
 function parseAiStatus(data) {
     if (!data) return;
     const text = typeof data === 'string' ? data : (data.mes || '');
-    const match = text.match(/\[STATUS:\s*([^\]]+)\]/i);
-    if (match) {
-        const items = match[1].split('|');
+    let matchedSomething = false;
+
+    // Пытаемся поймать формат с пайпами: [STATUS: Локация=... | Комната=...]
+    const matchLine = text.match(/\[STATUS:\s*([^\]]+)\]/i);
+    if (matchLine) {
+        matchedSomething = true;
+        const items = matchLine[1].split('|');
         items.forEach(item => {
             const [k, v] = item.split('=').map(s => s && s.trim());
             if (!k || !v) return;
-            const kl = k.toLowerCase();
-            if (kl.includes('лок') || kl.includes('location')) { state.location = v; document.getElementById('cz-v-loc').innerText = v; }
-            else if (kl.includes('комн') || kl.includes('room')) { state.room = v; document.getElementById('cz-v-room').innerText = v; }
-            else if (kl.includes('врем') || kl.includes('time')) { state.time = v; document.getElementById('cz-v-time').innerText = v; }
-            else if (kl.includes('погод') || kl.includes('weather')) { state.weather = v; document.getElementById('cz-v-weather').innerText = v; }
-            else if (kl.includes('одежд') || kl.includes('наряд') || kl.includes('outfit')) { state.charOutfit = v; document.getElementById('cz-v-char-outfit').innerText = v; }
-            else if (kl.includes('рук') || kl.includes('holding')) { state.charHolding = v; document.getElementById('cz-v-char-holding').innerText = v; }
+            applyStatus(k, v);
         });
     }
-    updateChar();
+
+    // Если пайпов нет, пытаемся поймать построчный формат:
+    // LOCATION: ...
+    // WEATHER: ...
+    // OUTFIT: ...
+    const lineRegex = /^(LOCATION|ЛОКАЦИЯ|ROOM|КОМНАТА|TIME|ВРЕМЯ|WEATHER|ПОГОДА|OUTFIT|НАРЯД|ОДЕЖДА|HOLDING|В РУКАХ|STATUS|СТАТУС):\s*(.+)$/gim;
+    let matchDict;
+    while ((matchDict = lineRegex.exec(text)) !== null) {
+        matchedSomething = true;
+        applyStatus(matchDict[1], matchDict[2]);
+    }
+
+    function applyStatus(k, v) {
+        if (!k || !v) return;
+        const kl = k.toLowerCase();
+        const el = (id) => document.getElementById(id);
+        if (kl.includes('лок') || kl.includes('location')) { state.location = v; if (el('cz-v-loc')) el('cz-v-loc').innerText = v; }
+        else if (kl.includes('комн') || kl.includes('room')) { state.room = v; if (el('cz-v-room')) el('cz-v-room').innerText = v; }
+        else if (kl.includes('врем') || kl.includes('time')) { state.time = v; if (el('cz-v-time')) el('cz-v-time').innerText = v; }
+        else if (kl.includes('погод') || kl.includes('weather')) { state.weather = v; if (el('cz-v-weather')) el('cz-v-weather').innerText = v; }
+        else if (kl.includes('одежд') || kl.includes('наряд') || kl.includes('outfit')) { state.charOutfit = v; if (el('cz-v-char-outfit')) el('cz-v-char-outfit').innerText = v; }
+        else if (kl.includes('рук') || kl.includes('holding')) { state.charHolding = v; if (el('cz-v-char-holding')) el('cz-v-char-holding').innerText = v; }
+        else if (kl.includes('статус') || kl.includes('status')) { state.userStatus = v; if (el('cz-v-user-status')) el('cz-v-user-status').innerText = v; }
+    }
+
+    if (matchedSomething) updateChar();
 }
 
 jQuery(() => {
