@@ -4,6 +4,7 @@ import {
     eventSource,
     event_types,
     saveSettingsDebounced,
+    generateQuietPrompt,
 } from '../../../../script.js';
 
 import { extension_settings } from '../../../extensions.js';
@@ -180,9 +181,9 @@ function injectSideDock() {
                     <span class="cz-tag cz-tag-user">Player</span>
                 </div>
                 <div class="cz-char-block">
-                    <div class="cz-ava cz-ava-user">U</div>
+                    <div class="cz-ava cz-ava-user" id="cz-user-ava">U</div>
                     <div>
-                        <div class="cz-char-name cz-lbl-user">Wanderer</div>
+                        <div class="cz-char-name cz-lbl-user" id="cz-user-name">Wanderer</div>
                         <div style="font-size:10.5px; font-weight:700;" class="cz-prop-k">● В сознании</div>
                     </div>
                 </div>
@@ -452,6 +453,7 @@ function bindAiSettings() {
 }
 
 function updateChar() {
+    // 1. Компаньон
     if (this_chid !== undefined && characters && characters[this_chid]) {
         const ch = characters[this_chid];
         const nameEl = document.getElementById('cz-char-name');
@@ -459,11 +461,44 @@ function updateChar() {
         if (nameEl) nameEl.innerText = ch.name || 'Персонаж';
         if (avaEl) {
             if (ch.avatar) {
-                avaEl.innerHTML = `<img src="/characters/${encodeURIComponent(ch.avatar)}" style="width:100%;height:100%;object-fit:cover;">`;
+                avaEl.innerHTML = `<img src="/characters/${encodeURIComponent(ch.avatar)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">`;
             } else {
                 avaEl.innerText = (ch.name || 'S')[0].toUpperCase();
             }
         }
+    }
+
+    // 2. Игрок (User / Persona)
+    try {
+        let userName = '';
+        let userAva = '';
+        if (typeof SillyTavern !== 'undefined' && SillyTavern.getContext) {
+            const ctx = SillyTavern.getContext();
+            if (ctx.name1) userName = ctx.name1;
+        }
+        if (!userName) {
+            const el = document.getElementById('your_name');
+            if (el && el.innerText.trim()) userName = el.innerText.trim();
+        }
+
+        const userNameEl = document.getElementById('cz-user-name');
+        const userAvaEl = document.getElementById('cz-user-ava');
+        if (userNameEl && userName) userNameEl.innerText = userName;
+
+        const uImg = document.querySelector('#user_avatar img') || document.querySelector('.user_avatar img') || document.querySelector('#avatar_user img');
+        if (uImg && uImg.src) {
+            userAva = uImg.src;
+        }
+
+        if (userAvaEl) {
+            if (userAva) {
+                userAvaEl.innerHTML = `<img src="${userAva}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">`;
+            } else if (userName) {
+                userAvaEl.innerText = userName[0].toUpperCase();
+            }
+        }
+    } catch(e) {
+        console.error('[Cozy Companion] Ошибка обновления данных игрока:', e);
     }
 }
 
@@ -664,7 +699,12 @@ ${recentMessages}
         } else {
             if (typeof SillyTavern !== 'undefined' && SillyTavern.getContext) {
                 const fullPrompt = `${settings.systemPrompt || defaultSettings.systemPrompt}\n\n${userPrompt}`;
-                rawResponse = await SillyTavern.getContext().generateQuietPrompt(fullPrompt, false);
+                const ctx = SillyTavern.getContext();
+                if (typeof ctx.generateQuietPrompt === 'function') {
+                    rawResponse = await ctx.generateQuietPrompt({ quietPrompt: fullPrompt });
+                } else if (typeof generateQuietPrompt === 'function') {
+                    rawResponse = await generateQuietPrompt({ quietPrompt: fullPrompt });
+                }
             } else {
                 throw new Error('Укажите API URL и API Key в настройках анализатора (шестерёнка внизу панели)!');
             }
@@ -747,6 +787,9 @@ jQuery(() => {
     });
 
     eventSource.on(event_types.CHAT_CHANGED, () => {
+        updateChar();
+    });
+    eventSource.on(event_types.SETTINGS_UPDATED, () => {
         updateChar();
     });
 });
