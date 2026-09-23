@@ -4,6 +4,8 @@ import {
     eventSource,
     event_types,
     name1,
+    user_avatar,
+    getThumbnailUrl
 } from '../../../../script.js';
 import { getContext } from '../../../extensions.js';
 
@@ -355,35 +357,37 @@ function updateChar() {
     
     // ОБНОВЛЯЕМ ИГРОКА (Имя + Аватарка)
     try {
-        const context = getContext();
-        const userName = name1 || context.name1 || 'Игрок';
-        
-        // Находим элементы игрока в DOM. 
-        // В HTML-шаблоне у нас:
-        // <div class="cz-char-name cz-lbl-user">Wanderer</div>
-        // <div class="cz-ava cz-ava-user">U</div>
+        const userName = name1 || 'Игрок';
         
         const userBlocks = document.querySelectorAll('.cz-lbl-user');
         const userAvaBlocks = document.querySelectorAll('.cz-ava-user');
         
-        // Имя
+        // Обновляем имя во всех блоках, кроме бейджей
         userBlocks.forEach(el => {
-            if (el.tagName !== 'SPAN') { // span это "✦ Игрок"
+            if (el.tagName !== 'SPAN') { 
                 el.innerText = userName;
             }
         });
         
-        // Аватарка (из context.userAvatar)
-        if (context.userAvatar) {
+        // Обновляем аватарку пользователя
+        if (user_avatar) {
+            // В SillyTavern пользовательские аватары (персоны) лежат по этому пути или получаются через getThumbnailUrl
+            let avatarImgUrl = `/User Avatars/${encodeURIComponent(user_avatar)}`;
+            if (typeof getThumbnailUrl === 'function') {
+                avatarImgUrl = getThumbnailUrl('persona', user_avatar);
+            }
+            
             userAvaBlocks.forEach(el => {
-                el.innerHTML = `<img src="${context.userAvatar}" style="width:100%;height:100%;object-fit:cover;">`;
+                el.innerHTML = `<img src="${avatarImgUrl}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerText='${userName[0].toUpperCase()}'">`;
             });
         } else {
             userAvaBlocks.forEach(el => {
                 el.innerText = userName[0].toUpperCase();
             });
         }
-    } catch(e) {}
+    } catch(e) {
+        console.error("Cozy Companion Error:", e);
+    }
 }
 
 function spawnAmbient() {
