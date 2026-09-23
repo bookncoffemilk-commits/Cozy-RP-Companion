@@ -5,9 +5,11 @@ import {
     event_types,
     name1,
     user_avatar,
-    getThumbnailUrl
+    getThumbnailUrl,
+    chat_metadata,
 } from '../../../../script.js';
 import { getContext } from '../../../extensions.js';
+import { getTokenCountAsync } from '../../../tokenizers.js';
 
 let state = {
     theme: 'sakura',
@@ -192,6 +194,7 @@ function injectSideDock() {
 
 
     updateChar();
+    updateTokens();
 }
 
 // ПЕРЕТАСКИВАНИЕ ДЛЯ КНОПКИ БЕЗ ЛОЖНЫХ КЛИКОВ
@@ -264,6 +267,7 @@ function togglePanel() {
     const isOpen = panel.classList.toggle('open');
     if (fab) fab.classList.toggle('active', isOpen);
     if (isOpen) updateChar();
+    updateTokens();
 }
 
 function bindThemeControls() {
@@ -338,6 +342,57 @@ function updateLoreDisplay() {
             if (previewEl) previewEl.innerText = 'Записи лора автоматически внедряются в контекст.';
         }
     } catch(e) {}
+}
+
+
+async function updateTokens() {
+    try {
+        const context = getContext();
+        if (!context || !context.chat || !context.chat.length) return;
+
+        // Собираем весь текст чата для подсчета
+        const allText = context.chat.map(m => m.mes).join('
+');
+        
+        let tokenCount = 0;
+        if (typeof getTokenCountAsync === 'function') {
+            tokenCount = await getTokenCountAsync(allText);
+        } else {
+            // Фолбэк, если функция недоступна: примерный подсчет
+            tokenCount = Math.round(allText.length / 4);
+        }
+        
+        const maxTokens = context.maxContext || 4096;
+        const freeTokens = Math.max(0, maxTokens - tokenCount);
+        
+        // Считаем процент заполнения (минимум 1%, максимум 100%)
+        let fillPercent = Math.min(100, Math.max(1, (tokenCount / maxTokens) * 100));
+
+        // Обновляем UI
+        const barEl = document.getElementById('cz-tok-bar');
+        if (barEl) {
+            barEl.style.width = `${fillPercent}%`;
+        }
+
+        const labels = document.querySelectorAll('.cz-val-highlight');
+        const subLabels = document.querySelectorAll('.cz-accent-sub');
+        
+        // Ищем метки токенов (первая в списке)
+        labels.forEach(el => {
+            if (el.innerText.includes('Токены:') || el.innerText.includes('Tokens:')) {
+                el.innerText = `Токены: ~${tokenCount.toLocaleString()} t`;
+            }
+        });
+        
+        subLabels.forEach(el => {
+            if (el.innerText.includes('Свободно:')) {
+                el.innerText = `Свободно: ${freeTokens.toLocaleString()} t`;
+            }
+        });
+
+    } catch (e) {
+        console.error("Cozy Companion Token Error:", e);
+    }
 }
 
 function updateChar() {
@@ -533,13 +588,14 @@ function parseAiStatus(data) {
     }
 
     if (matchedSomething) updateChar();
+    updateTokens();
 }
 
 jQuery(() => {
     injectSideDock();
     setInterval(spawnAmbient, 2200);
     eventSource.on(event_types.CHARACTER_MESSAGE_RENDERED, parseAiStatus);
-    eventSource.on(event_types.USER_MESSAGE_RENDERED, updateChar);
+    eventSource.on(event_types.USER_MESSAGE_RENDERED, () => { updateChar(); updateTokens(); });
     eventSource.on(event_types.CHAT_CHANGED, () => {
         updateChar();
         parseAiStatus('');
