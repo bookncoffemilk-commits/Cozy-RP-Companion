@@ -1,0 +1,12 @@
+{
+    "display_name": "Cozy RP Companion",
+    "description": "A beautiful, floating multi-theme HUD for tracking scene states, companion outfits, and tokens in SillyTavern.",
+    "loading_order": 50,
+    "requires": [],
+    "optional": [],
+    "js": "index.js",
+    "css": "style.css",
+    "author": "Alex",
+    "version": "1.1.0",
+    "license": "MIT"
+}

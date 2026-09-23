@@ -1,0 +1,594 @@
+@import url('https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700;800&display=swap');
+/* ==========================================================================
+   COZY RP COMPANION - COLOR CONTRAST (DUAL-TONE THEMES)
+   ========================================================================== */
+
+/* 🌸 1. САКУРА: РОЗОВЫЙ + ЗЕЛЕНЬ */
+#cozy-side-panel[data-theme="sakura"] {
+    --panel-bg:       #111014 !important;
+    --card-bg:        #292329 !important;
+    --field-bg:       #0F1010 !important;
+    --border:         #4B323D !important;
+    --border-subtle:  #3A242E !important;
+    
+    --accent:         #F28FA6 !important; /* РОЗОВЫЙ */
+    --accent-light:   #FFD0DA !important;
+    --accent-sec:     #7FA66A !important; /* ЗЕЛЕНЫЙ */
+    --accent-sec-lt:  #A9C98E !important;
+    
+    --text-main:      #FFFFFF !important;
+    --text-sec:       #D8D0D2 !important;
+    --glow-color:     rgba(242, 143, 166, 0.45) !important;
+}
+
+/* 🌲 2. ОБЫЧНЫЙ ЛЕС: ЗЕЛЁНЫЙ + КРАСНЫЙ */
+#cozy-side-panel[data-theme="forest"],
+#cozy-side-panel[data-theme="cottage"] {
+    --panel-bg:       #0A0F0B !important;
+    --card-bg:        #1D281E !important;
+    --field-bg:       #0B120D !important;
+    --border:         #3A4D33 !important;
+    --border-subtle:  #243320 !important;
+    
+    --accent:         #75A85F !important; /* ЗЕЛЕНЫЙ */
+    --accent-light:   #A8D08D !important;
+    --accent-sec:     #B94E58 !important; /* КРАСНЫЙ (ЯГОДЫ) */
+    --accent-sec-lt:  #E27A82 !important;
+    
+    --text-main:      #FFFFFF !important;
+    --text-sec:       #C6CEC1 !important;
+    --glow-color:     rgba(117, 168, 95, 0.45) !important;
+}
+
+/* 🍂 3. ОСЕННИЙ ЛЕС: ОРАНЖЕВЫЙ + ЗОЛОТОЙ + КОРИЧНЕВЫЙ КОРА + ЗЕЛЕНЬ */
+#cozy-side-panel[data-theme="autumn"] {
+    --panel-bg:       #100D09 !important;
+    --card-bg:        #292119 !important;
+    --field-bg:       #110E0A !important;
+    --border:         #765039 !important; /* КОРИЧНЕВАЯ КОРА */
+    --border-subtle:  #4A3224 !important;
+    
+    --accent:         #D9823B !important; /* ОРАНЖЕВЫЙ */
+    --accent-light:   #F0B65A !important; /* ЗОЛОТОЙ */
+    --accent-sec:     #71834A !important; /* ЗЕЛЕНЫЙ (ОСТАТКИ ЛИСТВЫ) */
+    --accent-sec-lt:  #9EAA68 !important;
+    
+    --text-main:      #FFFFFF !important;
+    --text-sec:       #D5C6AF !important;
+    --glow-color:     rgba(217, 130, 59, 0.45) !important;
+}
+
+/* 💜 4. ЛАВАНДА: ЛАВАНДА + СИНИЙ + ЗВЕЗДНЫЙ ЖЕЛТЫЙ */
+#cozy-side-panel[data-theme="lavender"] {
+    --panel-bg:       #090B14 !important;
+    --card-bg:        #1E1C2C !important;
+    --field-bg:       #0B0D18 !important;
+    --border:         #46375E !important;
+    --border-subtle:  #2F2440 !important;
+    
+    --accent:         #B99BE8 !important; /* ЛАВАНДА */
+    --accent-light:   #E0CCFF !important;
+    --accent-sec:     #83A8F0 !important; /* СИНИЙ / ЗВЕЗДНЫЙ */
+    --accent-sec-lt:  #FFF2B8 !important; /* ЗВЕЗДНЫЙ ЖЕЛТЫЙ */
+    
+    --text-main:      #FFFFFF !important;
+    --text-sec:       #C5C9D8 !important;
+    --glow-color:     rgba(185, 155, 232, 0.45) !important;
+}
+
+/* ==========================================================================
+   РАСПРЕДЕЛЕНИЕ ЦВЕТОВ: ПЕРВИЧНЫЙ (ACCENT) И ВТОРИЧНЫЙ (ACCENT-SEC)
+   ========================================================================== */
+
+#cozy-side-panel {
+    position: fixed !important;
+    top: 52px !important;
+    left: 0 !important;
+    bottom: 75px !important;
+    width: 385px !important;
+    max-width: 90vw !important;
+    background: var(--panel-bg) !important;
+    border-right: 2px solid var(--border) !important;
+    border-top: 2px solid var(--border) !important;
+    border-bottom: 2px solid var(--border) !important;
+    border-left: none !important;
+    border-radius: 0 24px 24px 0 !important;
+    box-shadow: 14px 20px 60px rgba(0, 0, 0, 0.95) !important;
+    font-family: "Golos Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    z-index: 99999 !important;
+    transform: translateX(-105%) !important;
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    opacity: 1 !important;
+    backdrop-filter: none !important;
+}
+
+#cozy-side-panel.open { transform: translateX(0) !important; }
+
+/* Шапка панели */
+#cozy-side-panel .cozy-p-head {
+    padding: 14px 20px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    background: var(--card-bg) !important;
+    border-bottom: 2px solid var(--border) !important;
+}
+
+#cozy-side-panel .cozy-p-title {
+    font-size: 14.5px !important;
+    font-weight: 700 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 9px !important;
+    color: var(--accent) !important; /* ПЕРВИЧНЫЙ */
+    text-shadow: 0 0 12px var(--glow-color) !important;
+}
+
+#cozy-side-panel .cozy-p-close {
+    background: var(--field-bg) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text-main) !important;
+    font-size: 15px !important;
+    cursor: pointer !important;
+    padding: 4px 8px !important;
+    border-radius: 8px !important;
+}
+
+/* Скролл */
+#cozy-side-panel .cozy-p-body {
+    padding: 16px !important;
+    overflow-y: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+    background: var(--panel-bg) !important;
+}
+
+/* КАРТОЧКА */
+#cozy-side-panel .cz-box {
+    background: var(--card-bg) !important;
+    border: 1.5px solid var(--border) !important;
+    border-radius: 16px !important;
+    padding: 14px 16px !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8) !important;
+}
+
+#cozy-side-panel .cz-box-head {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    margin-bottom: 11px !important;
+}
+
+/* ЗАГОЛОВОК БЛОКА: ПЕРВИЧНЫЙ */
+#cozy-side-panel .cz-box-label {
+    font-size: 12.5px !important;
+    font-weight: 600 !important;
+    color: var(--accent) !important;
+    text-shadow: 0 0 10px var(--glow-color) !important;
+}
+
+/* БЕЙДЖИ (ТЕГИ): ВТОРИЧНЫЙ ЦВЕТ! (Зелень в сакуре, Синий в лаванде) */
+#cozy-side-panel .cz-tag {
+    font-size: 10px !important;
+    font-weight: 500 !important;
+    background: var(--field-bg) !important;
+    color: var(--accent-sec) !important; 
+    border: 1.5px solid var(--accent-sec) !important;
+    padding: 3px 9px !important;
+    border-radius: 8px !important;
+}
+
+/* ШКАЛА ТОКЕНОВ: ГРАДИЕНТ ПЕРВИЧНЫЙ -> ВТОРИЧНЫЙ (Оба цвета вместе!) */
+#cozy-side-panel .cz-bar-bg {
+    width: 100% !important;
+    height: 10px !important;
+    background: var(--field-bg) !important;
+    border: 1.5px solid var(--border-subtle) !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+    margin: 6px 0 8px 0 !important;
+}
+
+#cozy-side-panel .cz-bar-fill {
+    height: 100% !important;
+    background: linear-gradient(90deg, var(--accent), var(--accent-light), var(--accent-sec)) !important;
+    border-radius: 8px !important;
+    box-shadow: 0 0 12px var(--glow-color) !important;
+}
+
+#cozy-side-panel .cz-val-highlight {
+    color: var(--text-main) !important;
+    font-weight: 500 !important;
+}
+
+#cozy-side-panel .cz-accent-sub {
+    color: var(--accent-sec) !important;
+    font-weight: 450 !important;
+}
+
+/* ВНУТРЕННИЕ ПОЛЯ */
+#cozy-side-panel .cz-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+}
+
+#cozy-side-panel .cz-tile {
+    background: var(--field-bg) !important;
+    border: 1.5px solid var(--border-subtle) !important;
+    border-radius: 11px !important;
+    padding: 9px 11px !important;
+    cursor: pointer !important;
+    transition: all 0.18s ease !important;
+}
+#cozy-side-panel .cz-tile:hover {
+    border-color: var(--accent) !important;
+    background: #000000 !important;
+}
+
+#cozy-side-panel .cz-tile-lbl {
+    font-size: 10px !important;
+    font-weight: 500 !important;
+    color: var(--text-sec) !important;
+    display: flex !important;
+    justify-content: space-between !important;
+}
+
+#cozy-side-panel .cz-tile-val {
+    font-size: 12.5px !important;
+    font-weight: 500 !important;
+    color: var(--text-main) !important;
+    margin-top: 4px !important;
+    line-height: 1.3 !important;
+}
+
+/* Персонажи */
+#cozy-side-panel .cz-char-block {
+    display: flex !important;
+    gap: 13px !important;
+    align-items: center !important;
+    margin-bottom: 11px !important;
+}
+
+#cozy-side-panel .cz-ava {
+    width: 52px !important;
+    height: 66px !important;
+    min-width: 52px !important;
+    border-radius: 14px !important;
+    background: linear-gradient(150deg, var(--card-bg), var(--accent-sec)) !important;
+    border: 2px solid var(--border) !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.7) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 22px !important;
+    font-weight: 800 !important;
+    color: var(--text-main) !important;
+    overflow: hidden !important;
+}
+#cozy-side-panel .cz-ava img { width: 100% !important; height: 100% !important; object-fit: cover !important; }
+
+#cozy-side-panel .cz-char-name {
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    color: var(--text-main) !important;
+}
+
+#cozy-side-panel .cz-props-box {
+    background: var(--field-bg) !important;
+    border: 1.5px solid var(--border-subtle) !important;
+    border-radius: 12px !important;
+    padding: 10px 12px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 7px !important;
+}
+
+#cozy-side-panel .cz-prop-row {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+    font-size: 12px !important;
+}
+
+/* Ключи: ПЕРВИЧНЫЙ */
+#cozy-side-panel .cz-prop-k {
+    color: var(--accent) !important;
+    font-weight: 500 !important;
+    min-width: 55px !important;
+}
+
+#cozy-side-panel .cz-prop-v {
+    flex: 1 !important;
+    color: var(--text-main) !important;
+    line-height: 1.4 !important;
+    font-weight: 500 !important;
+}
+
+/* Иконки редактирования ✎: ВТОРИЧНЫЙ! */
+#cozy-side-panel .cz-prop-ed {
+    color: var(--accent-sec) !important;
+    cursor: pointer !important;
+    font-size: 12px !important;
+    transition: transform 0.15s !important;
+}
+#cozy-side-panel .cz-prop-ed:hover {
+    color: var(--text-main) !important;
+    transform: scale(1.2) !important;
+}
+
+/* НИЖНИЙ БЛОК */
+#cozy-side-panel .cz-footer-box { margin-top: 4px !important; }
+
+#cozy-side-panel .cz-subhead {
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    margin-bottom: 9px !important;
+    text-transform: uppercase !important;
+    color: var(--text-sec) !important;
+    letter-spacing: 0.5px !important;
+}
+
+#cozy-side-panel .cz-theme-btn-group {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 7px !important;
+}
+
+#cozy-side-panel .cz-thm-btn {
+    background: var(--field-bg) !important;
+    border: 1.5px solid var(--border) !important;
+    color: var(--text-sec) !important;
+    padding: 8px 10px !important;
+    border-radius: 10px !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+    transition: all 0.16s ease !important;
+}
+
+#cozy-side-panel .cz-thm-btn:hover {
+    color: var(--text-main) !important;
+    border-color: var(--accent) !important;
+    background: var(--card-bg) !important;
+}
+
+/* АКТИВНАЯ ТЕМА: ПЕРВИЧНЫЙ */
+#cozy-side-panel .cz-thm-btn.active {
+    background: var(--accent) !important;
+    border-color: #ffffff !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 16px var(--glow-color) !important;
+    font-weight: 600 !important;
+}
+
+#cozy-side-panel .cz-particles-toggle-row {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    margin-top: 12px !important;
+    padding-top: 10px !important;
+    border-top: 1.5px dashed var(--border-subtle) !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    color: var(--text-sec) !important;
+}
+
+/* КНОПКА ЭФФЕКТОВ: ВТОРИЧНЫЙ ЦВЕТ (для контраста с активной темой) */
+#cozy-side-panel .cz-part-btn {
+    background: var(--field-bg) !important;
+    border: 1.5px solid var(--border) !important;
+    color: var(--text-main) !important;
+    padding: 5px 14px !important;
+    border-radius: 12px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+}
+
+#cozy-side-panel .cz-part-btn.active {
+    background: var(--accent-sec) !important;
+    border-color: #ffffff !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 12px var(--accent-sec-lt) !important;
+}
+
+/* ==========================================================================
+   3. КНОПКА ВЫЗОВА (АЛМАЗ)
+   ========================================================================== */
+#cozy-fab-trigger {
+    position: fixed !important;
+    bottom: 24px;
+    left: 24px;
+    width: 46px !important;
+    height: 46px !important;
+    border-radius: 14px !important;
+    background: #121016 !important;
+    border: 2px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7) !important;
+    color: #ffffff !important;
+    font-size: 18px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: grab !important;
+    box-sizing: border-box !important;
+    z-index: 99999 !important;
+    user-select: none !important;
+    touch-action: none !important;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, color 0.15s ease !important;
+}
+
+#cozy-fab-trigger svg {
+    width: 20px !important;
+    height: 20px !important;
+    fill: #ffffff !important;
+    transition: fill 0.15s ease !important;
+}
+
+#cozy-fab-trigger:hover {
+    border-color: #ffffff !important;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.85) !important;
+}
+
+#cozy-fab-trigger:active {
+    cursor: grabbing !important;
+}
+
+#cozy-fab-trigger.active {
+    background: var(--card-bg) !important;
+    border-color: var(--accent) !important;
+}
+
+#cozy-fab-trigger.active svg {
+    fill: var(--accent) !important;
+}
+
+/* ЧАСТИЦЫ */
+#cozy-ambient {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 1;
+    opacity: 0.65;
+}
+
+.cz-part-sakura-petal {
+    position: absolute;
+    top: -30px;
+    font-size: 16px;
+    color: #ff9db4;
+    animation: czFallRotate linear infinite;
+    filter: drop-shadow(0 0 5px rgba(255, 157, 180, 0.45));
+}
+.cz-part-sakura-petal.cz-pale { color: #ffd0dc; filter: drop-shadow(0 0 5px rgba(255, 208, 220, 0.45)); }
+.cz-part-sakura-petal.cz-white-pink { color: #fff0f3; font-size: 15px; filter: drop-shadow(0 0 6px rgba(255, 240, 243, 0.6)); }
+.cz-part-sakura-leaf { position: absolute; top: -30px; font-size: 13px; color: #92b87e; animation: czFallSway linear infinite; filter: drop-shadow(0 0 4px rgba(146, 184, 126, 0.4)); }
+
+.cz-part-forest-leaf { position: absolute; top: -30px; font-size: 16px; color: #88c76b; animation: czFallRotate linear infinite; filter: drop-shadow(0 0 5px rgba(136, 199, 107, 0.4)); }
+.cz-part-forest-leaf.cz-deep-moss { color: #5c8f44; }
+.cz-part-forest-berry { position: absolute; top: -30px; font-size: 12px; color: #e04141; animation: czFallDirect linear infinite; filter: drop-shadow(0 0 6px rgba(224, 65, 65, 0.6)); }
+
+.cz-part-autumn-leaf { position: absolute; top: -30px; font-size: 17px; color: #d8702b; animation: czFallRotate linear infinite; filter: drop-shadow(0 0 5px rgba(216, 112, 43, 0.5)); }
+.cz-part-autumn-leaf.cz-amber { color: #e59938; }
+.cz-part-autumn-leaf.cz-gold { color: #f2ba49; }
+.cz-part-autumn-green { position: absolute; top: -30px; font-size: 14px; color: #7f8a45; animation: czFallSway linear infinite; filter: drop-shadow(0 0 4px rgba(127, 138, 69, 0.4)); }
+
+.cz-part-star-warm { position: absolute; top: -25px; font-size: 16px; color: #FFE066; animation: czFallSway linear infinite; filter: drop-shadow(0 0 8px rgba(255, 224, 102, 0.95)); }
+.cz-part-mote-blue { position: absolute; top: -25px; font-size: 12px; color: #8da4f7; animation: czFallFloat linear infinite; filter: drop-shadow(0 0 8px rgba(141, 164, 247, 0.9)); }
+.cz-part-mote-lavender { position: absolute; top: -25px; font-size: 13px; color: #c99df2; animation: czFallFloat linear infinite; filter: drop-shadow(0 0 8px rgba(201, 157, 242, 0.9)); }
+
+@keyframes czFallRotate {
+    0% { transform: translate3d(0, -20px, 0) rotate(0deg); opacity: 0; }
+    20% { opacity: 0.85; transform: translate3d(20px, 20vh, 0) rotate(45deg); }
+    50% { opacity: 0.9; transform: translate3d(-15px, 50vh, 0) rotate(90deg); }
+    80% { opacity: 0.75; transform: translate3d(15px, 80vh, 0) rotate(140deg); }
+    100% { transform: translate3d(-5px, 105vh, 0) rotate(200deg); opacity: 0; }
+}
+@keyframes czFallSway {
+    0% { transform: translate3d(0, -20px, 0) rotate(0deg); opacity: 0; }
+    25% { opacity: 0.85; transform: translate3d(25px, 25vh, 0) rotate(30deg); }
+    75% { opacity: 0.8; transform: translate3d(-20px, 75vh, 0) rotate(-20deg); }
+    100% { transform: translate3d(10px, 105vh, 0) rotate(60deg); opacity: 0; }
+}
+@keyframes czFallDirect {
+    0% { transform: translate3d(0, -20px, 0); opacity: 0; }
+    20% { opacity: 0.9; }
+    80% { opacity: 0.85; }
+    100% { transform: translate3d(5px, 105vh, 0); opacity: 0; }
+}
+@keyframes czFallFloat {
+    0% { transform: translate3d(0, -15px, 0) scale(0.8); opacity: 0; }
+    30% { opacity: 0.95; transform: translate3d(15px, 30vh, 0) scale(1.1); }
+    70% { opacity: 0.85; transform: translate3d(-12px, 70vh, 0) scale(0.9); }
+    100% { transform: translate3d(8px, 105vh, 0) scale(1); opacity: 0; }
+}
+
+/* ==========================================================================
+   ПЫЛИНКИ ВОЗДУХА (ATMOSPHERIC DUST MOTES) - ИСПРАВЛЕНЫ!
+   ========================================================================== */
+.cz-dust {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(1.5px);
+    pointer-events: none;
+    mix-blend-mode: normal;
+    animation-timing-function: ease-in-out;
+    animation-iteration-count: infinite;
+    animation-fill-mode: both;
+}
+
+/* Сакура */
+.cz-dust-sakura-pink { background: #FFD0DA; box-shadow: 0 0 8px rgba(255, 208, 218, 0.8); }
+.cz-dust-sakura-green { background: #A9C98E; box-shadow: 0 0 8px rgba(169, 201, 142, 0.8); }
+.cz-dust-sakura-white { background: #FFFFFF; box-shadow: 0 0 8px rgba(255, 255, 255, 0.8); }
+
+/* Лес */
+.cz-dust-forest-green { background: #A8D08D; box-shadow: 0 0 8px rgba(168, 208, 141, 0.8); }
+.cz-dust-forest-red { background: #E27A82; box-shadow: 0 0 8px rgba(226, 122, 130, 0.8); }
+.cz-dust-forest-neutral { background: #E4E8E0; box-shadow: 0 0 8px rgba(228, 232, 224, 0.8); }
+
+/* Осень */
+.cz-dust-autumn-gold { background: #F0B65A; box-shadow: 0 0 8px rgba(240, 182, 90, 0.8); }
+.cz-dust-autumn-amber { background: #D58A45; box-shadow: 0 0 8px rgba(213, 138, 69, 0.8); }
+.cz-dust-autumn-orange { background: #EBAA6A; box-shadow: 0 0 8px rgba(235, 170, 106, 0.8); }
+.cz-dust-autumn-green { background: #9EAA68; box-shadow: 0 0 8px rgba(158, 170, 104, 0.8); }
+
+/* Лаванда */
+.cz-dust-lavender-purple { background: #E0CCFF; box-shadow: 0 0 8px rgba(224, 204, 255, 0.8); }
+.cz-dust-lavender-blue { background: #83A8F0; box-shadow: 0 0 8px rgba(131, 168, 240, 0.8); }
+.cz-dust-lavender-yellow { background: #FFDD66; box-shadow: 0 0 10px rgba(255, 221, 102, 0.95); opacity: 0.9 !important; filter: blur(0.5px); }
+.cz-dust-lavender-white { background: #FFFFFF; box-shadow: 0 0 8px rgba(255, 255, 255, 0.8); }
+
+/* 2 разные анимации медленного ПАРЕНИЯ (без падения вниз) */
+@keyframes czDustHover1 {
+    0% { transform: translate3d(0, 0, 0) scale(0.8); opacity: 0; }
+    25% { opacity: 0.8; transform: translate3d(20px, -20px, 0) scale(1.1); }
+    50% { opacity: 0.3; transform: translate3d(10px, -40px, 0) scale(0.9); }
+    75% { opacity: 0.8; transform: translate3d(30px, -20px, 0) scale(1.1); }
+    100% { transform: translate3d(15px, 0, 0) scale(0.8); opacity: 0; }
+}
+
+@keyframes czDustHover2 {
+    0% { transform: translate3d(0, 0, 0) scale(0.8); opacity: 0; }
+    25% { opacity: 0.7; transform: translate3d(-20px, 20px, 0) scale(1.2); }
+    50% { opacity: 0.2; transform: translate3d(-40px, 10px, 0) scale(0.9); }
+    75% { opacity: 0.7; transform: translate3d(-20px, -15px, 0) scale(1.1); }
+    100% { transform: translate3d(0, -30px, 0) scale(0.8); opacity: 0; }
+}
+/* Вливаем желтый цвет в интерфейс темы Лаванда */
+#cozy-side-panel[data-theme="lavender"] .cz-prop-ed,
+#cozy-side-panel[data-theme="lavender"] .cz-tile-lbl span:last-child {
+    color: #F5E6A8 !important; /* Нежно-желтые иконки редактирования (карандаши) */
+    text-shadow: 0 0 8px rgba(245, 230, 168, 0.6) !important;
+}
+
+#cozy-side-panel[data-theme="lavender"] .cz-accent-sub {
+    color: #F5E6A8 !important; /* Желтый текст 'Свободно: ...' и 'В диалоге' */
+}
+
+#cozy-side-panel[data-theme="lavender"] .cz-bar-fill {
+    /* Градиент токенов: Синий -> Лаванда -> Желтый */
+    background: linear-gradient(90deg, #83A8F0, #B99BE8, #F5E6A8) !important;
+    box-shadow: 0 0 12px rgba(245, 230, 168, 0.4) !important;
+}
+
+#cozy-side-panel[data-theme="lavender"] .cozy-p-title svg {
+    fill: #F5E6A8 !important; /* Желтый алмазик в шапке! */
+    filter: drop-shadow(0 0 5px rgba(245, 230, 168, 0.6)) !important;
+}
+
+#cozy-side-panel[data-theme="lavender"] .cz-tag {
+    /* Бейджи синие */
+    color: #83A8F0 !important;
+    border-color: #83A8F0 !important;
+}
