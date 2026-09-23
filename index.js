@@ -3,28 +3,69 @@ import {
     this_chid,
     eventSource,
     event_types,
+    saveSettingsDebounced,
 } from '../../../../script.js';
 
-let state = {
+import { extension_settings } from '../../../extensions.js';
+
+const MODULE_KEY = 'cozy_rp_companion';
+
+const defaultSettings = {
     theme: 'sakura',
     particlesOn: true,
-    location: '🏡 Лесная хижина',
-    room: 'Мансарда травницы',
-    time: '🌙 Глубокая ночь',
-    weather: '🌧 Осенний туман',
-    charOutfit: 'Изумрудное платье, вязаная шаль.',
-    charHolding: 'Глиняная кружка с мятным отваром.',
-    userOutfit: 'Походная рубаха, тёмные бриджи.',
-    userStatus: 'Перевязанное плечо, лёгкая слабость.',
+    apiUrl: '',
+    apiKey: '',
+    model: '',
+    autoAnalyze: true,
+    systemPrompt: `Ты — модуль контекстного анализа для RPG панели статуса.
+Твоя задача — внимательно прочитать текущие сообщения ролевого чата и извлечь актуальное состояние сцены.
+Ответь СТРОГО в формате JSON без кавычек markdown и без вводных слов:
+{
+  "location": "🏡 Краткое название общей локации (с подходящим эмодзи)",
+  "room": "Конкретная зона / комната / участок местности",
+  "time": "Время суток (например: 🌙 Глубокая ночь, ⛅ Полдень)",
+  "weather": "Текущая погода и условия (например: 🌧 Осенний туман, 48°F)",
+  "charOutfit": "Во что одет компаньон (персонаж {{char}})",
+  "charHolding": "Что компаньон держит в руках или рядом",
+  "userOutfit": "Во что одет игрок (пользователь {{user}})",
+  "userStatus": "Текущее состояние игрока"
+}`,
+    state: {
+        location: '🏡 Лесная хижина',
+        room: 'Мансарда травницы',
+        time: '🌙 Глубокая ночь',
+        weather: '🌧 Осенний туман',
+        charOutfit: 'Изумрудное платье, вязаная шаль.',
+        charHolding: 'Глиняная кружка с мятным отваром.',
+        userOutfit: 'Походная рубаха, тёмные бриджи.',
+        userStatus: 'Перевязанное плечо, лёгкая слабость.',
+    }
 };
+
+function getSettings() {
+    extension_settings[MODULE_KEY] = extension_settings[MODULE_KEY] || {};
+    const s = Object.assign({}, defaultSettings, extension_settings[MODULE_KEY]);
+    s.state = Object.assign({}, defaultSettings.state, extension_settings[MODULE_KEY].state || {});
+    return s;
+}
+
+function saveModuleSettings() {
+    saveSettingsDebounced();
+}
+
+let settings = getSettings();
+let state = settings.state;
 
 function injectSideDock() {
     if (document.getElementById('cozy-fab-trigger')) return;
 
     // Слой частиц
-    const ambientLayer = document.createElement('div');
-    ambientLayer.id = 'cozy-ambient';
-    document.body.prepend(ambientLayer);
+    let ambientLayer = document.getElementById('cozy-ambient');
+    if (!ambientLayer) {
+        ambientLayer = document.createElement('div');
+        ambientLayer.id = 'cozy-ambient';
+        document.body.prepend(ambientLayer);
+    }
 
     // 1. ПЕРЕТАСКИВАЕМАЯ НЕЙТРАЛЬНАЯ КНОПКА (✦ ИСКРА / ДРАГОЦЕННЫЙ РОМБ)
     const fab = document.createElement('div');
@@ -50,14 +91,17 @@ function injectSideDock() {
     // 2. БОКОВАЯ ПАНЕЛЬ
     const panel = document.createElement('div');
     panel.id = 'cozy-side-panel';
-    panel.dataset.theme = state.theme;
+    panel.dataset.theme = settings.theme;
     panel.innerHTML = `
         <div class="cozy-p-head">
             <span class="cozy-p-title">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L3 9L12 22L21 9L12 2ZM7.5 9L12 4.5L16.5 9H7.5ZM5.2 9.8L10.8 18.2L5.8 11.2L5.2 9.8ZM13.2 18.2L18.8 9.8L18.2 11.2L13.2 18.2ZM12 19L8.6 10H15.4L12 19Z"/></svg>
                 <span>Состояние сцены</span>
             </span>
-            <button class="cozy-p-close" id="cozy-p-close-btn" title="Спрятать">✕</button>
+            <div style="display:flex; align-items:center; gap:8px;">
+                <button class="cz-btn-sync" id="cz-btn-analyze-now" title="Запустить анализ сцены через ИИ">⚡ Анализ</button>
+                <button class="cozy-p-close" id="cozy-p-close-btn" title="Спрятать">✕</button>
+            </div>
         </div>
         
         <div class="cozy-p-body">
@@ -75,8 +119,6 @@ function injectSideDock() {
                     <span class="cz-accent-sub">Свободно: 3,380 t</span>
                 </div>
             </div>
-
-            
 
             <!-- Сцена -->
             <div class="cz-box">
@@ -158,22 +200,54 @@ function injectSideDock() {
                 </div>
             </div>
 
+            <!-- БЛОК АНАЛИЗАТОРА И КЛЮЧЕЙ ИИ -->
+            <div class="cz-box cz-ai-box">
+                <button class="cz-accordion-toggle" id="cz-toggle-ai-settings">
+                    <span>⚙️ Анализатор сцены (API, Ключ, Промпт)</span>
+                    <span id="cz-ai-toggle-arrow">▼</span>
+                </button>
+                <div class="cz-accordion-content" id="cz-ai-settings-box" style="display:none;">
+                    <label class="cz-field-label">
+                        API Endpoint (URL):
+                        <input type="text" id="cz-ai-url" class="cz-input" placeholder="https://openrouter.ai/api/v1/chat/completions" value="${settings.apiUrl || ''}">
+                    </label>
+                    <label class="cz-field-label">
+                        API Key:
+                        <input type="password" id="cz-ai-key" class="cz-input" placeholder="sk-..." value="${settings.apiKey || ''}">
+                    </label>
+                    <label class="cz-field-label">
+                        ID Модели (Model):
+                        <input type="text" id="cz-ai-model" class="cz-input" placeholder="anthropic/claude-3.5-haiku или openai/gpt-4o-mini" value="${settings.model || ''}">
+                    </label>
+                    <label class="cz-field-label">
+                        Промпт Анализатора:
+                        <textarea id="cz-ai-prompt" class="cz-textarea">${settings.systemPrompt || ''}</textarea>
+                    </label>
+                    <div class="cz-ai-opts-row">
+                        <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                            <input type="checkbox" id="cz-ai-auto" ${settings.autoAnalyze ? 'checked' : ''}>
+                            <span>Авто-анализ после каждого ответа</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
             <!-- НИЖНИЙ БЛОК: ТЕМЫ И ЧАСТИЦЫ -->
             <div class="cz-box cz-footer-box">
                 <div class="cz-theme-selector">
                     <div class="cz-subhead">Стилизация панели:</div>
                     <div class="cz-theme-btn-group">
-                        <button class="cz-thm-btn ${state.theme === 'sakura' ? 'active' : ''}" data-thm="sakura">🌸 Сакура</button>
-                        <button class="cz-thm-btn ${state.theme === 'forest' ? 'active' : ''}" data-thm="forest">🌲 Лес</button>
-                        <button class="cz-thm-btn ${state.theme === 'autumn' ? 'active' : ''}" data-thm="autumn">🍂 Осень</button>
-                        <button class="cz-thm-btn ${state.theme === 'lavender' ? 'active' : ''}" data-thm="lavender">💜 Лаванда</button>
+                        <button class="cz-thm-btn ${settings.theme === 'sakura' ? 'active' : ''}" data-thm="sakura">🌸 Сакура</button>
+                        <button class="cz-thm-btn ${settings.theme === 'forest' ? 'active' : ''}" data-thm="forest">🌲 Лес</button>
+                        <button class="cz-thm-btn ${settings.theme === 'autumn' ? 'active' : ''}" data-thm="autumn">🍂 Осень</button>
+                        <button class="cz-thm-btn ${settings.theme === 'lavender' ? 'active' : ''}" data-thm="lavender">💜 Лаванда</button>
                     </div>
                 </div>
 
                 <div class="cz-particles-toggle-row">
                     <span>Парящие эффекты:</span>
-                    <button id="cz-toggle-particles" class="cz-part-btn ${state.particlesOn ? 'active' : ''}">
-                        ${state.particlesOn ? '✨ Вкл' : '✕ Выкл'}
+                    <button id="cz-toggle-particles" class="cz-part-btn ${settings.particlesOn ? 'active' : ''}">
+                        ${settings.particlesOn ? '✨ Вкл' : '✕ Выкл'}
                     </button>
                 </div>
             </div>
@@ -185,7 +259,7 @@ function injectSideDock() {
 
     bindEdits();
     bindThemeControls();
-
+    bindAiSettings();
 
     updateChar();
 }
@@ -225,8 +299,6 @@ function makeDraggable(el) {
         let newX = origX + dx;
         let newY = origY + dy;
 
-        // ПЛАВНОЕ ДВИЖЕНИЕ 1:1, НИКАКИХ ПРИЛИПАНИЙ И СЕТОК 8px!
-        // ТОЛЬКО БАМПЕР ОТ КРАЁВ ЭКРАНА:
         newX = Math.max(8, Math.min(newX, window.innerWidth - 56));
         newY = Math.max(8, Math.min(newY, window.innerHeight - 56));
 
@@ -266,7 +338,10 @@ function bindThemeControls() {
     document.querySelectorAll('.cz-thm-btn').forEach(btn => {
         btn.onclick = () => {
             const thm = btn.dataset.thm;
-            state.theme = thm;
+            settings.theme = thm;
+            extension_settings[MODULE_KEY].theme = thm;
+            saveModuleSettings();
+
             document.getElementById('cozy-side-panel').dataset.theme = thm;
             document.querySelectorAll('.cz-thm-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
@@ -279,11 +354,14 @@ function bindThemeControls() {
     const partBtn = document.getElementById('cz-toggle-particles');
     if (partBtn) {
         partBtn.onclick = () => {
-            state.particlesOn = !state.particlesOn;
-            partBtn.classList.toggle('active', state.particlesOn);
-            partBtn.innerText = state.particlesOn ? '✨ Вкл' : '✕ Выкл';
+            settings.particlesOn = !settings.particlesOn;
+            extension_settings[MODULE_KEY].particlesOn = settings.particlesOn;
+            saveModuleSettings();
+
+            partBtn.classList.toggle('active', settings.particlesOn);
+            partBtn.innerText = settings.particlesOn ? '✨ Вкл' : '✕ Выкл';
             const layer = document.getElementById('cozy-ambient');
-            if (layer && !state.particlesOn) layer.innerHTML = '';
+            if (layer && !settings.particlesOn) layer.innerHTML = '';
         };
     }
 }
@@ -291,7 +369,11 @@ function bindThemeControls() {
 function bindEdits() {
     const edit = (label, currentVal, callback) => {
         const val = prompt(`Изменить ${label}:`, currentVal);
-        if (val !== null && val.trim() !== '') callback(val.trim());
+        if (val !== null && val.trim() !== '') {
+            callback(val.trim());
+            extension_settings[MODULE_KEY].state = state;
+            saveModuleSettings();
+        }
     };
 
     document.getElementById('cz-t-loc').onclick = () => edit('локацию', state.location, v => { state.location = v; document.getElementById('cz-v-loc').innerText = v; });
@@ -305,39 +387,71 @@ function bindEdits() {
     document.getElementById('cz-ed-user-status').onclick = () => edit('ваш статус', state.userStatus, v => { state.userStatus = v; document.getElementById('cz-v-user-status').innerText = v; });
 }
 
+function bindAiSettings() {
+    const toggleBtn = document.getElementById('cz-toggle-ai-settings');
+    const box = document.getElementById('cz-ai-settings-box');
+    const arrow = document.getElementById('cz-ai-toggle-arrow');
+    
+    if (toggleBtn && box) {
+        toggleBtn.onclick = () => {
+            const isOpen = box.style.display !== 'none';
+            box.style.display = isOpen ? 'none' : 'block';
+            if (arrow) arrow.innerText = isOpen ? '▼' : '▲';
+        };
+    }
 
-function updateLoreDisplay() {
-    try {
-        const nameEl = document.getElementById('cz-lore-active-name');
-        const countEl = document.getElementById('cz-lore-entries-count');
-        const previewEl = document.getElementById('cz-lore-preview');
-        
-        let activeName = 'Не выбран';
-        if (selected_world_info && selected_world_info.length > 0) {
-            activeName = selected_world_info[0];
-        } else if (this_chid !== undefined && characters && characters[this_chid] && characters[this_chid].data && characters[this_chid].data.character_book) {
-            activeName = characters[this_chid].data.character_book.name || 'Книга персонажа';
-        }
+    const aiUrl = document.getElementById('cz-ai-url');
+    if (aiUrl) {
+        aiUrl.onchange = (e) => {
+            settings.apiUrl = e.target.value.trim();
+            extension_settings[MODULE_KEY].apiUrl = settings.apiUrl;
+            saveModuleSettings();
+        };
+    }
 
-        if (nameEl) nameEl.innerText = activeName;
-        
-        if (world_info && world_info[activeName]) {
-            const entries = world_info[activeName].entries || {};
-            const keys = Object.keys(entries);
-            if (countEl) countEl.innerText = `Записей: ${keys.length}`;
-            if (keys.length > 0 && previewEl) {
-                const first = entries[keys[0]];
-                previewEl.innerText = (first.comment || first.content || 'Запись активна').slice(0, 85) + '...';
-            }
-        } else {
-            if (countEl) countEl.innerText = 'Память активна';
-            if (previewEl) previewEl.innerText = 'Записи лора автоматически внедряются в контекст.';
-        }
-    } catch(e) {}
+    const aiKey = document.getElementById('cz-ai-key');
+    if (aiKey) {
+        aiKey.onchange = (e) => {
+            settings.apiKey = e.target.value.trim();
+            extension_settings[MODULE_KEY].apiKey = settings.apiKey;
+            saveModuleSettings();
+        };
+    }
+
+    const aiModel = document.getElementById('cz-ai-model');
+    if (aiModel) {
+        aiModel.onchange = (e) => {
+            settings.model = e.target.value.trim();
+            extension_settings[MODULE_KEY].model = settings.model;
+            saveModuleSettings();
+        };
+    }
+
+    const aiPrompt = document.getElementById('cz-ai-prompt');
+    if (aiPrompt) {
+        aiPrompt.onchange = (e) => {
+            settings.systemPrompt = e.target.value;
+            extension_settings[MODULE_KEY].systemPrompt = settings.systemPrompt;
+            saveModuleSettings();
+        };
+    }
+
+    const aiAuto = document.getElementById('cz-ai-auto');
+    if (aiAuto) {
+        aiAuto.onchange = (e) => {
+            settings.autoAnalyze = e.target.checked;
+            extension_settings[MODULE_KEY].autoAnalyze = settings.autoAnalyze;
+            saveModuleSettings();
+        };
+    }
+
+    const syncBtn = document.getElementById('cz-btn-analyze-now');
+    if (syncBtn) {
+        syncBtn.onclick = () => runSceneAnalysis(true);
+    }
 }
 
 function updateChar() {
-    updateLoreDisplay();
     if (this_chid !== undefined && characters && characters[this_chid]) {
         const ch = characters[this_chid];
         const nameEl = document.getElementById('cz-char-name');
@@ -353,8 +467,11 @@ function updateChar() {
     }
 }
 
+/* ==========================================================================
+   ЧАСТИЦЫ: 70% КРУЖОЧКИ (СВЕТОВЫЕ ТОЧКИ) + 30% ТЕМАТИЧЕСКИЕ ЧАСТИЦЫ
+   ========================================================================== */
 function spawnAmbient() {
-    if (!state.particlesOn) return;
+    if (!settings.particlesOn) return;
     const layer = document.getElementById('cozy-ambient');
     if (!layer) return;
 
@@ -362,26 +479,35 @@ function spawnAmbient() {
     const startX = 2 + Math.random() * 96;
     p.style.left = `${startX}vw`;
 
-    // Пылинок стало больше (45% шанс)
-    let isDust = Math.random() < 0.45;
-    const dur = isDust ? (12 + Math.random() * 15) : (14 + Math.random() * 7);
+    // 70% кружочки / пылинки, 30% тематические частицы
+    const isDust = Math.random() < 0.70;
+    const dur = isDust ? (12 + Math.random() * 14) : (14 + Math.random() * 8);
     p.style.animationDuration = `${dur}s`;
 
     if (isDust) {
-        // Пылинки появляются по всему экрану (от 5% до 90% высоты) и ПАРЯТ, а не падают!
+        // Пылинки парят по всей высоте экрана
         p.style.top = `${5 + Math.random() * 85}vh`;
         p.style.animationName = Math.random() > 0.5 ? 'czDustHover1' : 'czDustHover2';
+        
+        // Разброс размеров от 3px до 10px для объемности
+        const size = 3 + Math.random() * 7; 
+        p.style.width = `${size}px`;
+        p.style.height = `${size}px`;
+        p.style.opacity = 0.25 + Math.random() * 0.55;
     }
 
     const roll = Math.random();
+    const thm = settings.theme;
 
-    if (state.theme === 'sakura') {
+    if (thm === 'sakura') {
         if (isDust) {
-            if (roll < 0.2) p.className = 'cz-dust cz-dust-sakura-green';
-            else if (roll > 0.85) p.className = 'cz-dust cz-dust-sakura-white';
-            else p.className = 'cz-dust cz-dust-sakura-pink';
+            // Кружочки: нежно-розовые, мягкие зеленые, редкие почти белые
+            if (roll < 0.50) p.className = 'cz-dust cz-dust-sakura-pink';
+            else if (roll < 0.85) p.className = 'cz-dust cz-dust-sakura-green';
+            else p.className = 'cz-dust cz-dust-sakura-white';
         } else {
-            if (roll < 0.22) {
+            // Тематические: маленькие лепестки сакуры + редкие зелёные листочки
+            if (roll < 0.25) {
                 p.className = 'cz-part-sakura-leaf';
                 p.innerHTML = '🍃';
             } else {
@@ -391,13 +517,15 @@ function spawnAmbient() {
                 if (roll > 0.88) p.classList.add('cz-white-pink');
             }
         }
-    } else if (state.theme === 'forest' || state.theme === 'cottage') {
+    } else if (thm === 'forest' || thm === 'cottage') {
         if (isDust) {
-            if (roll < 0.15) p.className = 'cz-dust cz-dust-forest-red';
-            else if (roll > 0.8) p.className = 'cz-dust cz-dust-forest-neutral';
-            else p.className = 'cz-dust cz-dust-forest-green';
+            // Кружочки: разные мягкие зеленые, редкие приглушенно-красные, светлые
+            if (roll < 0.60) p.className = 'cz-dust cz-dust-forest-green';
+            else if (roll < 0.80) p.className = 'cz-dust cz-dust-forest-red';
+            else p.className = 'cz-dust cz-dust-forest-neutral';
         } else {
-            if (roll < 0.18) {
+            // Тематические: лесные листья + редкие красные ягоды
+            if (roll < 0.20) {
                 p.className = 'cz-part-forest-berry';
                 p.innerHTML = '🍒';
             } else {
@@ -406,13 +534,15 @@ function spawnAmbient() {
                 if (roll > 0.75) p.classList.add('cz-deep-moss');
             }
         }
-    } else if (state.theme === 'autumn') {
+    } else if (thm === 'autumn') {
         if (isDust) {
-            if (roll < 0.15) p.className = 'cz-dust cz-dust-autumn-green';
-            else if (roll < 0.5) p.className = 'cz-dust cz-dust-autumn-gold';
-            else if (roll < 0.8) p.className = 'cz-dust cz-dust-autumn-orange';
-            else p.className = 'cz-dust cz-dust-autumn-amber';
+            // Кружочки: золотистые, янтарные, мягкие оранжевые, редкие зеленые
+            if (roll < 0.35) p.className = 'cz-dust cz-dust-autumn-gold';
+            else if (roll < 0.65) p.className = 'cz-dust cz-dust-autumn-amber';
+            else if (roll < 0.85) p.className = 'cz-dust cz-dust-autumn-orange';
+            else p.className = 'cz-dust cz-dust-autumn-green';
         } else {
+            // Тематические: маленькие осенние листья золотые/янтарные, редкие зелёные
             if (roll < 0.18) {
                 p.className = 'cz-part-autumn-green';
                 p.innerHTML = '🍃';
@@ -423,16 +553,16 @@ function spawnAmbient() {
                 if (roll > 0.75) p.classList.add('cz-gold');
             }
         }
-    } else if (state.theme === 'lavender') {
+    } else if (thm === 'lavender') {
         if (isDust) {
-            // БАЛАНС: 20% желтые, 20% синие, 20% молочные, 40% лавандовые
-            if (roll < 0.20) p.className = 'cz-dust cz-dust-lavender-yellow';
-            else if (roll < 0.40) p.className = 'cz-dust cz-dust-lavender-blue';
-            else if (roll < 0.60) p.className = 'cz-dust cz-dust-lavender-white';
-            else p.className = 'cz-dust cz-dust-lavender-purple';
+            // Кружочки: лавандовые, синие, нежно-желтые, редкие белые
+            if (roll < 0.35) p.className = 'cz-dust cz-dust-lavender-purple';
+            else if (roll < 0.65) p.className = 'cz-dust cz-dust-lavender-blue';
+            else if (roll < 0.85) p.className = 'cz-dust cz-dust-lavender-yellow';
+            else p.className = 'cz-dust cz-dust-lavender-white';
         } else {
-            // БАЛАНС: 25% желтые звездочки, 40% синие искры, 35% лавандовые искры
-            if (roll < 0.25) {
+            // Тематические: маленькие мягкие звёздочки + лавандовые искры
+            if (roll < 0.35) {
                 p.className = 'cz-part-star-warm';
                 p.innerHTML = '★';
             } else {
@@ -442,19 +572,147 @@ function spawnAmbient() {
         }
     }
 
-    if (isDust) {
-        // Большой разброс размеров, чтобы создать перспективу: от 3px до 11px
-        const size = 3 + Math.random() * 8; 
-        p.style.width = `${size}px`;
-        p.style.height = `${size}px`;
-        p.style.opacity = 0.2 + Math.random() * 0.6; // от 20% до 80% яркости
-    }
-
     layer.appendChild(p);
     setTimeout(() => p.remove(), dur * 1000);
 }
 
-function parseAiStatus(data) {
+/* ==========================================================================
+   ОБНОВЛЕНИЕ DOM ПАНЕЛИ
+   ========================================================================== */
+function applyStateToUI() {
+    const setT = (id, v) => { const el = document.getElementById(id); if (el && v) el.innerText = v; };
+    setT('cz-v-loc', state.location);
+    setT('cz-v-room', state.room);
+    setT('cz-v-time', state.time);
+    setT('cz-v-weather', state.weather);
+    setT('cz-v-char-outfit', state.charOutfit);
+    setT('cz-v-char-holding', state.charHolding);
+    setT('cz-v-user-outfit', state.userOutfit);
+    setT('cz-v-user-status', state.userStatus);
+}
+
+/* ==========================================================================
+   ИИ АНАЛИЗАТОР СЦЕНЫ
+   ========================================================================== */
+async function runSceneAnalysis(isManual = false) {
+    const btn = document.getElementById('cz-btn-analyze-now');
+    if (btn) {
+        btn.innerText = '⏳ Анализ...';
+        btn.style.opacity = '0.7';
+    }
+
+    try {
+        console.log('[Cozy Companion] Запуск анализатора сцены...');
+        let chatContext = {};
+        if (typeof SillyTavern !== 'undefined' && SillyTavern.getContext) {
+            chatContext = SillyTavern.getContext();
+        }
+        
+        const chat = chatContext.chat || [];
+        if (!chat || chat.length === 0) {
+            console.log('[Cozy Companion] Чат пуст для анализа.');
+            if (btn) { btn.innerText = '⚡ Анализ'; btn.style.opacity = '1'; }
+            return;
+        }
+
+        // Берем последние 3-5 сообщений для точного контекста
+        const recentMessages = chat.slice(-4).map(m => `${m.is_user ? 'User' : (m.name || 'Character')}: ${m.mes}`).join('\n\n');
+
+        const userPrompt = `ТЕКУЩЕЕ СОСТОЯНИЕ ПАНЕЛИ:
+Локация: ${state.location}
+Комната/Зона: ${state.room}
+Время: ${state.time}
+Погода: ${state.weather}
+Наряд персонажа: ${state.charOutfit}
+В руках персонажа: ${state.charHolding}
+Наряд игрока: ${state.userOutfit}
+Статус игрока: ${state.userStatus}
+
+ПОСЛЕДНИЕ РЕПЛИКИ ЧАТА:
+${recentMessages}
+
+Проанализируй события, где находятся герои, во что одеты и в каком состоянии. Верни обновленный JSON без разметки markdown.`;
+
+        let rawResponse = '';
+
+        if (settings.apiUrl && settings.apiKey) {
+            const reqBody = {
+                model: settings.model || 'gpt-4o-mini',
+                messages: [
+                    { role: 'system', content: settings.systemPrompt || defaultSettings.systemPrompt },
+                    { role: 'user', content: userPrompt }
+                ],
+                temperature: 0.2,
+            };
+
+            const res = await fetch(settings.apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${settings.apiKey}`
+                },
+                body: JSON.stringify(reqBody)
+            });
+
+            if (!res.ok) {
+                const errText = await res.text();
+                throw new Error(`API Error ${res.status}: ${errText}`);
+            }
+
+            const data = await res.json();
+            rawResponse = data.choices?.[0]?.message?.content || '';
+        } else {
+            if (typeof SillyTavern !== 'undefined' && SillyTavern.getContext) {
+                const fullPrompt = `${settings.systemPrompt || defaultSettings.systemPrompt}\n\n${userPrompt}`;
+                rawResponse = await SillyTavern.getContext().generateQuietPrompt(fullPrompt, false);
+            } else {
+                throw new Error('Укажите API URL и API Key в настройках анализатора (шестерёнка внизу панели)!');
+            }
+        }
+
+        console.log('[Cozy Companion] Ответ анализатора:', rawResponse);
+
+        let parsed = null;
+        try {
+            const clean = rawResponse.replace(/```json/gi, '').replace(/```/g, '').trim();
+            const firstBrace = clean.indexOf('{');
+            const lastBrace = clean.lastIndexOf('}');
+            if (firstBrace !== -1 && lastBrace !== -1) {
+                parsed = JSON.parse(clean.slice(firstBrace, lastBrace + 1));
+            }
+        } catch (e) {
+            console.error('[Cozy Companion] Ошибка парсинга JSON анализатора:', e, rawResponse);
+        }
+
+        if (parsed) {
+            if (parsed.location) state.location = parsed.location;
+            if (parsed.room) state.room = parsed.room;
+            if (parsed.time) state.time = parsed.time;
+            if (parsed.weather) state.weather = parsed.weather;
+            if (parsed.charOutfit) state.charOutfit = parsed.charOutfit;
+            if (parsed.charHolding) state.charHolding = parsed.charHolding;
+            if (parsed.userOutfit) state.userOutfit = parsed.userOutfit;
+            if (parsed.userStatus) state.userStatus = parsed.userStatus;
+
+            extension_settings[MODULE_KEY].state = state;
+            saveModuleSettings();
+            applyStateToUI();
+            console.log('[Cozy Companion] Состояние сцены успешно обновлено!');
+        }
+    } catch (err) {
+        console.error('[Cozy Companion] Ошибка выполнения анализа:', err);
+        if (isManual) {
+            alert(`Ошибка анализа сцены:\n${err.message || err}`);
+        }
+    } finally {
+        if (btn) {
+            btn.innerText = '⚡ Анализ';
+            btn.style.opacity = '1';
+        }
+    }
+}
+
+function parseAiStatusTag(data) {
     if (!data) return;
     const text = typeof data === 'string' ? data : (data.mes || '');
     const match = text.match(/\[STATUS:\s*([^\]]+)\]/i);
@@ -464,23 +722,31 @@ function parseAiStatus(data) {
             const [k, v] = item.split('=').map(s => s && s.trim());
             if (!k || !v) return;
             const kl = k.toLowerCase();
-            if (kl.includes('лок')) { state.location = v; document.getElementById('cz-v-loc').innerText = v; }
-            else if (kl.includes('комн')) { state.room = v; document.getElementById('cz-v-room').innerText = v; }
-            else if (kl.includes('врем')) { state.time = v; document.getElementById('cz-v-time').innerText = v; }
-            else if (kl.includes('погод')) { state.weather = v; document.getElementById('cz-v-weather').innerText = v; }
-            else if (kl.includes('одежд') || kl.includes('наряд')) { state.charOutfit = v; document.getElementById('cz-v-char-outfit').innerText = v; }
-            else if (kl.includes('рук')) { state.charHolding = v; document.getElementById('cz-v-char-holding').innerText = v; }
+            if (kl.includes('лок')) { state.location = v; }
+            else if (kl.includes('комн')) { state.room = v; }
+            else if (kl.includes('врем')) { state.time = v; }
+            else if (kl.includes('погод')) { state.weather = v; }
+            else if (kl.includes('одежд') || kl.includes('наряд')) { state.charOutfit = v; }
+            else if (kl.includes('рук')) { state.charHolding = v; }
         });
+        applyStateToUI();
+        extension_settings[MODULE_KEY].state = state;
+        saveModuleSettings();
     }
-    updateChar();
 }
 
 jQuery(() => {
     injectSideDock();
-    setInterval(spawnAmbient, 2200);
-    eventSource.on(event_types.CHARACTER_MESSAGE_RENDERED, parseAiStatus);
+    setInterval(spawnAmbient, 1800);
+
+    eventSource.on(event_types.CHARACTER_MESSAGE_RENDERED, (data) => {
+        parseAiStatusTag(data);
+        if (settings.autoAnalyze) {
+            runSceneAnalysis(false);
+        }
+    });
+
     eventSource.on(event_types.CHAT_CHANGED, () => {
         updateChar();
-        parseAiStatus('');
     });
 });
