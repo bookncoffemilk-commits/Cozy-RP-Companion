@@ -3,13 +3,7 @@ import {
     this_chid,
     eventSource,
     event_types,
-    name1,
-    user_avatar,
-    getThumbnailUrl,
-    chat_metadata,
 } from '../../../../script.js';
-import { getContext } from '../../../extensions.js';
-import { getTokenCountAsync } from '../../../tokenizers.js';
 
 let state = {
     theme: 'sakura',
@@ -27,7 +21,10 @@ let state = {
 function injectSideDock() {
     if (document.getElementById('cozy-fab-trigger')) return;
 
-    
+    // Слой частиц
+    const ambientLayer = document.createElement('div');
+    ambientLayer.id = 'cozy-ambient';
+    document.body.prepend(ambientLayer);
 
     // 1. ПЕРЕТАСКИВАЕМАЯ НЕЙТРАЛЬНАЯ КНОПКА (✦ ИСКРА / ДРАГОЦЕННЫЙ РОМБ)
     const fab = document.createElement('div');
@@ -60,10 +57,7 @@ function injectSideDock() {
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L3 9L12 22L21 9L12 2ZM7.5 9L12 4.5L16.5 9H7.5ZM5.2 9.8L10.8 18.2L5.8 11.2L5.2 9.8ZM13.2 18.2L18.8 9.8L18.2 11.2L13.2 18.2ZM12 19L8.6 10H15.4L12 19Z"/></svg>
                 <span>Состояние сцены</span>
             </span>
-            <div style="display:flex; gap:6px;">
-                <button class="cozy-p-close" id="cz-auto-update-btn" title="Авто-обновление (AI)">↻</button>
-                <button class="cozy-p-close" id="cozy-p-close-btn" title="Спрятать">✕</button>
-            </div>
+            <button class="cozy-p-close" id="cozy-p-close-btn" title="Спрятать">✕</button>
         </div>
         
         <div class="cozy-p-body">
@@ -176,21 +170,24 @@ function injectSideDock() {
                     </div>
                 </div>
 
-
+                <div class="cz-particles-toggle-row">
+                    <span>Парящие эффекты:</span>
+                    <button id="cz-toggle-particles" class="cz-part-btn ${state.particlesOn ? 'active' : ''}">
+                        ${state.particlesOn ? '✨ Вкл' : '✕ Выкл'}
+                    </button>
+                </div>
             </div>
         </div>
     `;
 
     document.body.appendChild(panel);
     document.getElementById('cozy-p-close-btn').onclick = togglePanel;
-    document.getElementById('cz-auto-update-btn').onclick = syncSceneWithAI;
 
     bindEdits();
     bindThemeControls();
 
 
     updateChar();
-    updateTokens();
 }
 
 // ПЕРЕТАСКИВАНИЕ ДЛЯ КНОПКИ БЕЗ ЛОЖНЫХ КЛИКОВ
@@ -263,7 +260,6 @@ function togglePanel() {
     const isOpen = panel.classList.toggle('open');
     if (fab) fab.classList.toggle('active', isOpen);
     if (isOpen) updateChar();
-    updateTokens();
 }
 
 function bindThemeControls() {
@@ -275,11 +271,21 @@ function bindThemeControls() {
             document.querySelectorAll('.cz-thm-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             
-            
+            const layer = document.getElementById('cozy-ambient');
+            if (layer) layer.innerHTML = '';
         };
     });
 
-
+    const partBtn = document.getElementById('cz-toggle-particles');
+    if (partBtn) {
+        partBtn.onclick = () => {
+            state.particlesOn = !state.particlesOn;
+            partBtn.classList.toggle('active', state.particlesOn);
+            partBtn.innerText = state.particlesOn ? '✨ Вкл' : '✕ Выкл';
+            const layer = document.getElementById('cozy-ambient');
+            if (layer && !state.particlesOn) layer.innerHTML = '';
+        };
+    }
 }
 
 function bindEdits() {
@@ -330,102 +336,8 @@ function updateLoreDisplay() {
     } catch(e) {}
 }
 
-
-async function syncSceneWithAI() {
-    const btn = document.getElementById('cz-auto-update-btn');
-    if (btn) {
-        btn.innerHTML = '⌛';
-        btn.disabled = true;
-    }
-
-    try {
-        const prompt = `Analyze the current roleplay scene based on the latest messages. 
-Return ONLY a valid JSON block containing these exact keys (no markdown formatting, no comments, just the raw JSON object):
-{
-  "location": "Brief name of the current location",
-  "room": "Brief name of the current room or immediate area",
-  "time": "Current time of day (e.g. Night, Morning)",
-  "weather": "Current weather or atmosphere",
-  "charOutfit": "What your character is currently wearing",
-  "charHolding": "What your character is currently holding",
-  "userStatus": "Physical or mental status of the user's character"
-}`;
-
-        let reply = await generateQuietPrompt({ quietPrompt: prompt });
-        if (!reply) throw new Error("No reply from AI");
-
-        const jsonMatch = reply.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-            const data = JSON.parse(jsonMatch[0]);
-            if (data.location) { state.location = data.location; document.getElementById('cz-v-loc').innerText = data.location; }
-            if (data.room) { state.room = data.room; document.getElementById('cz-v-room').innerText = data.room; }
-            if (data.time) { state.time = data.time; document.getElementById('cz-v-time').innerText = data.time; }
-            if (data.weather) { state.weather = data.weather; document.getElementById('cz-v-weather').innerText = data.weather; }
-            if (data.charOutfit) { state.charOutfit = data.charOutfit; document.getElementById('cz-v-char-outfit').innerText = data.charOutfit; }
-            if (data.charHolding) { state.charHolding = data.charHolding; document.getElementById('cz-v-char-holding').innerText = data.charHolding; }
-            if (data.userStatus) { state.userStatus = data.userStatus; document.getElementById('cz-v-user-status').innerText = data.userStatus; }
-        }
-    } catch (e) {
-        console.error("Cozy Companion AI Sync Error:", e);
-    } finally {
-        if (btn) {
-            btn.innerHTML = '↻';
-            btn.disabled = false;
-        }
-    }
-}
-
-async function updateTokens() {
-    try {
-        const context = getContext();
-        if (!context || !context.chat || !context.chat.length) return;
-
-        // Собираем весь текст чата для подсчета
-        const allText = context.chat.map(m => m.mes).join('
-');
-        
-        let tokenCount = 0;
-        if (typeof getTokenCountAsync === 'function') {
-            tokenCount = await getTokenCountAsync(allText);
-        } else {
-            // Фолбэк, если функция недоступна: примерный подсчет
-            tokenCount = Math.round(allText.length / 4);
-        }
-        
-        const maxTokens = context.maxContext || 4096;
-        const freeTokens = Math.max(0, maxTokens - tokenCount);
-        
-        // Считаем процент заполнения (минимум 1%, максимум 100%)
-        let fillPercent = Math.min(100, Math.max(1, (tokenCount / maxTokens) * 100));
-
-        // Обновляем UI
-        const barEl = document.getElementById('cz-tok-bar');
-        if (barEl) {
-            barEl.style.width = `${fillPercent}%`;
-        }
-
-        const labels = document.querySelectorAll('.cz-val-highlight');
-        const subLabels = document.querySelectorAll('.cz-accent-sub');
-        
-        // Ищем метки токенов (первая в списке)
-        labels.forEach(el => {
-            if (el.innerText.includes('Токены:') || el.innerText.includes('Tokens:')) {
-                el.innerText = `Токены: ~${tokenCount.toLocaleString()} t`;
-            }
-        });
-        
-        subLabels.forEach(el => {
-            if (el.innerText.includes('Свободно:')) {
-                el.innerText = `Свободно: ${freeTokens.toLocaleString()} t`;
-            }
-        });
-
-    } catch (e) {
-        console.error("Cozy Companion Token Error:", e);
-    }
-}
-
 function updateChar() {
+    updateLoreDisplay();
     if (this_chid !== undefined && characters && characters[this_chid]) {
         const ch = characters[this_chid];
         const nameEl = document.getElementById('cz-char-name');
@@ -438,40 +350,6 @@ function updateChar() {
                 avaEl.innerText = (ch.name || 'S')[0].toUpperCase();
             }
         }
-    }
-    
-    // ОБНОВЛЯЕМ ИГРОКА (Имя + Аватарка)
-    try {
-        const userName = name1 || 'Игрок';
-        
-        const userBlocks = document.querySelectorAll('.cz-lbl-user');
-        const userAvaBlocks = document.querySelectorAll('.cz-ava-user');
-        
-        // Обновляем имя во всех блоках, кроме бейджей
-        userBlocks.forEach(el => {
-            if (el.tagName !== 'SPAN') { 
-                el.innerText = userName;
-            }
-        });
-        
-        // Обновляем аватарку пользователя
-        if (user_avatar) {
-            // В SillyTavern пользовательские аватары (персоны) лежат по этому пути или получаются через getThumbnailUrl
-            let avatarImgUrl = `/User Avatars/${encodeURIComponent(user_avatar)}`;
-            if (typeof getThumbnailUrl === 'function') {
-                avatarImgUrl = getThumbnailUrl('persona', user_avatar);
-            }
-            
-            userAvaBlocks.forEach(el => {
-                el.innerHTML = `<img src="${avatarImgUrl}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerText='${userName[0].toUpperCase()}'">`;
-            });
-        } else {
-            userAvaBlocks.forEach(el => {
-                el.innerText = userName[0].toUpperCase();
-            });
-        }
-    } catch(e) {
-        console.error("Cozy Companion Error:", e);
     }
 }
 
@@ -579,52 +457,28 @@ function spawnAmbient() {
 function parseAiStatus(data) {
     if (!data) return;
     const text = typeof data === 'string' ? data : (data.mes || '');
-    let matchedSomething = false;
-
-    // Пытаемся поймать формат с пайпами: [STATUS: Локация=... | Комната=...]
-    const matchLine = text.match(/\[STATUS:\s*([^\]]+)\]/i);
-    if (matchLine) {
-        matchedSomething = true;
-        const items = matchLine[1].split('|');
+    const match = text.match(/\[STATUS:\s*([^\]]+)\]/i);
+    if (match) {
+        const items = match[1].split('|');
         items.forEach(item => {
             const [k, v] = item.split('=').map(s => s && s.trim());
             if (!k || !v) return;
-            applyStatus(k, v);
+            const kl = k.toLowerCase();
+            if (kl.includes('лок')) { state.location = v; document.getElementById('cz-v-loc').innerText = v; }
+            else if (kl.includes('комн')) { state.room = v; document.getElementById('cz-v-room').innerText = v; }
+            else if (kl.includes('врем')) { state.time = v; document.getElementById('cz-v-time').innerText = v; }
+            else if (kl.includes('погод')) { state.weather = v; document.getElementById('cz-v-weather').innerText = v; }
+            else if (kl.includes('одежд') || kl.includes('наряд')) { state.charOutfit = v; document.getElementById('cz-v-char-outfit').innerText = v; }
+            else if (kl.includes('рук')) { state.charHolding = v; document.getElementById('cz-v-char-holding').innerText = v; }
         });
     }
-
-    // Если пайпов нет, пытаемся поймать построчный формат, учитывая символы цитирования (>) и пробелы в начале:
-    const lineRegex = /^[>\s]*(LOCATION|ЛОКАЦИЯ|МЕСТО|ROOM|КОМНАТА|TIME|ВРЕМЯ|WEATHER|ПОГОДА|АТМОСФЕРА|OUTFIT|НАРЯД|ОДЕЖДА|HOLDING|В РУКАХ|STATUS|СТАТУС):\s*(.+)$/gim;
-    let matchDict;
-    while ((matchDict = lineRegex.exec(text)) !== null) {
-        matchedSomething = true;
-        let val = matchDict[2].replace(/[<>[\]]/g, '').trim();
-        applyStatus(matchDict[1], val);
-    }
-
-    function applyStatus(k, v) {
-        if (!k || !v) return;
-        const kl = k.toLowerCase();
-        const el = (id) => document.getElementById(id);
-        
-        if (kl.includes('лок') || kl.includes('location') || kl.includes('место')) { state.location = v; if (el('cz-v-loc')) el('cz-v-loc').innerText = v; }
-        else if (kl.includes('комн') || kl.includes('room')) { state.room = v; if (el('cz-v-room')) el('cz-v-room').innerText = v; }
-        else if (kl.includes('врем') || kl.includes('time')) { state.time = v; if (el('cz-v-time')) el('cz-v-time').innerText = v; }
-        else if (kl.includes('погод') || kl.includes('weather') || kl.includes('атмосфера')) { state.weather = v; if (el('cz-v-weather')) el('cz-v-weather').innerText = v; }
-        else if (kl.includes('одежд') || kl.includes('наряд') || kl.includes('outfit')) { state.charOutfit = v; if (el('cz-v-char-outfit')) el('cz-v-char-outfit').innerText = v; }
-        else if (kl.includes('рук') || kl.includes('holding')) { state.charHolding = v; if (el('cz-v-char-holding')) el('cz-v-char-holding').innerText = v; }
-        else if (kl.includes('статус') || kl.includes('status')) { state.userStatus = v; if (el('cz-v-user-status')) el('cz-v-user-status').innerText = v; }
-    }
-
-    if (matchedSomething) updateChar();
-    updateTokens();
+    updateChar();
 }
 
 jQuery(() => {
     injectSideDock();
-    
+    setInterval(spawnAmbient, 2200);
     eventSource.on(event_types.CHARACTER_MESSAGE_RENDERED, parseAiStatus);
-    eventSource.on(event_types.USER_MESSAGE_RENDERED, () => { updateChar(); updateTokens(); });
     eventSource.on(event_types.CHAT_CHANGED, () => {
         updateChar();
         parseAiStatus('');

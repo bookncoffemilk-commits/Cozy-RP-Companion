@@ -367,12 +367,36 @@
     font-weight: 600 !important;
 }
 
-#cozy-side-panel 
+#cozy-side-panel .cz-particles-toggle-row {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    margin-top: 12px !important;
+    padding-top: 10px !important;
+    border-top: 1.5px dashed var(--border-subtle) !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    color: var(--text-sec) !important;
+}
 
 /* КНОПКА ЭФФЕКТОВ: ВТОРИЧНЫЙ ЦВЕТ (для контраста с активной темой) */
-#cozy-side-panel 
+#cozy-side-panel .cz-part-btn {
+    background: var(--field-bg) !important;
+    border: 1.5px solid var(--border) !important;
+    color: var(--text-main) !important;
+    padding: 5px 14px !important;
+    border-radius: 12px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+}
 
-#cozy-side-panel 
+#cozy-side-panel .cz-part-btn.active {
+    background: var(--accent-sec) !important;
+    border-color: #ffffff !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 12px var(--accent-sec-lt) !important;
+}
 
 /* ==========================================================================
    3. КНОПКА ВЫЗОВА (АЛМАЗ)
@@ -425,3 +449,146 @@
     fill: var(--accent) !important;
 }
 
+/* ЧАСТИЦЫ */
+#cozy-ambient {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 1;
+    opacity: 0.65;
+}
+
+.cz-part-sakura-petal {
+    position: absolute;
+    top: -30px;
+    font-size: 16px;
+    color: #ff9db4;
+    animation: czFallRotate linear infinite;
+    filter: drop-shadow(0 0 5px rgba(255, 157, 180, 0.45));
+}
+.cz-part-sakura-petal.cz-pale { color: #ffd0dc; filter: drop-shadow(0 0 5px rgba(255, 208, 220, 0.45)); }
+.cz-part-sakura-petal.cz-white-pink { color: #fff0f3; font-size: 15px; filter: drop-shadow(0 0 6px rgba(255, 240, 243, 0.6)); }
+.cz-part-sakura-leaf { position: absolute; top: -30px; font-size: 13px; color: #92b87e; animation: czFallSway linear infinite; filter: drop-shadow(0 0 4px rgba(146, 184, 126, 0.4)); }
+
+.cz-part-forest-leaf { position: absolute; top: -30px; font-size: 16px; color: #88c76b; animation: czFallRotate linear infinite; filter: drop-shadow(0 0 5px rgba(136, 199, 107, 0.4)); }
+.cz-part-forest-leaf.cz-deep-moss { color: #5c8f44; }
+.cz-part-forest-berry { position: absolute; top: -30px; font-size: 12px; color: #e04141; animation: czFallDirect linear infinite; filter: drop-shadow(0 0 6px rgba(224, 65, 65, 0.6)); }
+
+.cz-part-autumn-leaf { position: absolute; top: -30px; font-size: 17px; color: #d8702b; animation: czFallRotate linear infinite; filter: drop-shadow(0 0 5px rgba(216, 112, 43, 0.5)); }
+.cz-part-autumn-leaf.cz-amber { color: #e59938; }
+.cz-part-autumn-leaf.cz-gold { color: #f2ba49; }
+.cz-part-autumn-green { position: absolute; top: -30px; font-size: 14px; color: #7f8a45; animation: czFallSway linear infinite; filter: drop-shadow(0 0 4px rgba(127, 138, 69, 0.4)); }
+
+.cz-part-star-warm { position: absolute; top: -25px; font-size: 16px; color: #FFE066; animation: czFallSway linear infinite; filter: drop-shadow(0 0 8px rgba(255, 224, 102, 0.95)); }
+.cz-part-mote-blue { position: absolute; top: -25px; font-size: 12px; color: #8da4f7; animation: czFallFloat linear infinite; filter: drop-shadow(0 0 8px rgba(141, 164, 247, 0.9)); }
+.cz-part-mote-lavender { position: absolute; top: -25px; font-size: 13px; color: #c99df2; animation: czFallFloat linear infinite; filter: drop-shadow(0 0 8px rgba(201, 157, 242, 0.9)); }
+
+@keyframes czFallRotate {
+    0% { transform: translate3d(0, -20px, 0) rotate(0deg); opacity: 0; }
+    20% { opacity: 0.85; transform: translate3d(20px, 20vh, 0) rotate(45deg); }
+    50% { opacity: 0.9; transform: translate3d(-15px, 50vh, 0) rotate(90deg); }
+    80% { opacity: 0.75; transform: translate3d(15px, 80vh, 0) rotate(140deg); }
+    100% { transform: translate3d(-5px, 105vh, 0) rotate(200deg); opacity: 0; }
+}
+@keyframes czFallSway {
+    0% { transform: translate3d(0, -20px, 0) rotate(0deg); opacity: 0; }
+    25% { opacity: 0.85; transform: translate3d(25px, 25vh, 0) rotate(30deg); }
+    75% { opacity: 0.8; transform: translate3d(-20px, 75vh, 0) rotate(-20deg); }
+    100% { transform: translate3d(10px, 105vh, 0) rotate(60deg); opacity: 0; }
+}
+@keyframes czFallDirect {
+    0% { transform: translate3d(0, -20px, 0); opacity: 0; }
+    20% { opacity: 0.9; }
+    80% { opacity: 0.85; }
+    100% { transform: translate3d(5px, 105vh, 0); opacity: 0; }
+}
+@keyframes czFallFloat {
+    0% { transform: translate3d(0, -15px, 0) scale(0.8); opacity: 0; }
+    30% { opacity: 0.95; transform: translate3d(15px, 30vh, 0) scale(1.1); }
+    70% { opacity: 0.85; transform: translate3d(-12px, 70vh, 0) scale(0.9); }
+    100% { transform: translate3d(8px, 105vh, 0) scale(1); opacity: 0; }
+}
+
+/* ==========================================================================
+   ПЫЛИНКИ ВОЗДУХА (ATMOSPHERIC DUST MOTES) - ИСПРАВЛЕНЫ!
+   ========================================================================== */
+.cz-dust {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(1.5px);
+    pointer-events: none;
+    mix-blend-mode: normal;
+    animation-timing-function: ease-in-out;
+    animation-iteration-count: infinite;
+    animation-fill-mode: both;
+}
+
+/* Сакура */
+.cz-dust-sakura-pink { background: #FFD0DA; box-shadow: 0 0 8px rgba(255, 208, 218, 0.8); }
+.cz-dust-sakura-green { background: #A9C98E; box-shadow: 0 0 8px rgba(169, 201, 142, 0.8); }
+.cz-dust-sakura-white { background: #FFFFFF; box-shadow: 0 0 8px rgba(255, 255, 255, 0.8); }
+
+/* Лес */
+.cz-dust-forest-green { background: #A8D08D; box-shadow: 0 0 8px rgba(168, 208, 141, 0.8); }
+.cz-dust-forest-red { background: #E27A82; box-shadow: 0 0 8px rgba(226, 122, 130, 0.8); }
+.cz-dust-forest-neutral { background: #E4E8E0; box-shadow: 0 0 8px rgba(228, 232, 224, 0.8); }
+
+/* Осень */
+.cz-dust-autumn-gold { background: #F0B65A; box-shadow: 0 0 8px rgba(240, 182, 90, 0.8); }
+.cz-dust-autumn-amber { background: #D58A45; box-shadow: 0 0 8px rgba(213, 138, 69, 0.8); }
+.cz-dust-autumn-orange { background: #EBAA6A; box-shadow: 0 0 8px rgba(235, 170, 106, 0.8); }
+.cz-dust-autumn-green { background: #9EAA68; box-shadow: 0 0 8px rgba(158, 170, 104, 0.8); }
+
+/* Лаванда */
+.cz-dust-lavender-purple { background: #E0CCFF; box-shadow: 0 0 8px rgba(224, 204, 255, 0.8); }
+.cz-dust-lavender-blue { background: #83A8F0; box-shadow: 0 0 8px rgba(131, 168, 240, 0.8); }
+.cz-dust-lavender-yellow { background: #FFDD66; box-shadow: 0 0 10px rgba(255, 221, 102, 0.95); opacity: 0.9 !important; filter: blur(0.5px); }
+.cz-dust-lavender-white { background: #FFFFFF; box-shadow: 0 0 8px rgba(255, 255, 255, 0.8); }
+
+/* 2 разные анимации медленного ПАРЕНИЯ (без падения вниз) */
+@keyframes czDustHover1 {
+    0% { transform: translate3d(0, 0, 0) scale(0.8); opacity: 0; }
+    25% { opacity: 0.8; transform: translate3d(20px, -20px, 0) scale(1.1); }
+    50% { opacity: 0.3; transform: translate3d(10px, -40px, 0) scale(0.9); }
+    75% { opacity: 0.8; transform: translate3d(30px, -20px, 0) scale(1.1); }
+    100% { transform: translate3d(15px, 0, 0) scale(0.8); opacity: 0; }
+}
+
+@keyframes czDustHover2 {
+    0% { transform: translate3d(0, 0, 0) scale(0.8); opacity: 0; }
+    25% { opacity: 0.7; transform: translate3d(-20px, 20px, 0) scale(1.2); }
+    50% { opacity: 0.2; transform: translate3d(-40px, 10px, 0) scale(0.9); }
+    75% { opacity: 0.7; transform: translate3d(-20px, -15px, 0) scale(1.1); }
+    100% { transform: translate3d(0, -30px, 0) scale(0.8); opacity: 0; }
+}
+/* Вливаем желтый цвет в интерфейс темы Лаванда */
+#cozy-side-panel[data-theme="lavender"] .cz-prop-ed,
+#cozy-side-panel[data-theme="lavender"] .cz-tile-lbl span:last-child {
+    color: #F5E6A8 !important; /* Нежно-желтые иконки редактирования (карандаши) */
+    text-shadow: 0 0 8px rgba(245, 230, 168, 0.6) !important;
+}
+
+#cozy-side-panel[data-theme="lavender"] .cz-accent-sub {
+    color: #F5E6A8 !important; /* Желтый текст 'Свободно: ...' и 'В диалоге' */
+}
+
+#cozy-side-panel[data-theme="lavender"] .cz-bar-fill {
+    /* Градиент токенов: Синий -> Лаванда -> Желтый */
+    background: linear-gradient(90deg, #83A8F0, #B99BE8, #F5E6A8) !important;
+    box-shadow: 0 0 12px rgba(245, 230, 168, 0.4) !important;
+}
+
+#cozy-side-panel[data-theme="lavender"] .cozy-p-title svg {
+    fill: #F5E6A8 !important; /* Желтый алмазик в шапке! */
+    filter: drop-shadow(0 0 5px rgba(245, 230, 168, 0.6)) !important;
+}
+
+#cozy-side-panel[data-theme="lavender"] .cz-tag {
+    /* Бейджи синие */
+    color: #83A8F0 !important;
+    border-color: #83A8F0 !important;
+}
