@@ -3,7 +3,9 @@ import {
     this_chid,
     eventSource,
     event_types,
+    name1,
 } from '../../../../script.js';
+import { getContext } from '../../../extensions.js';
 
 let state = {
     theme: 'sakura',
@@ -337,7 +339,6 @@ function updateLoreDisplay() {
 }
 
 function updateChar() {
-    updateLoreDisplay();
     if (this_chid !== undefined && characters && characters[this_chid]) {
         const ch = characters[this_chid];
         const nameEl = document.getElementById('cz-char-name');
@@ -351,6 +352,38 @@ function updateChar() {
             }
         }
     }
+    
+    // ОБНОВЛЯЕМ ИГРОКА (Имя + Аватарка)
+    try {
+        const context = getContext();
+        const userName = name1 || context.name1 || 'Игрок';
+        
+        // Находим элементы игрока в DOM. 
+        // В HTML-шаблоне у нас:
+        // <div class="cz-char-name cz-lbl-user">Wanderer</div>
+        // <div class="cz-ava cz-ava-user">U</div>
+        
+        const userBlocks = document.querySelectorAll('.cz-lbl-user');
+        const userAvaBlocks = document.querySelectorAll('.cz-ava-user');
+        
+        // Имя
+        userBlocks.forEach(el => {
+            if (el.tagName !== 'SPAN') { // span это "✦ Игрок"
+                el.innerText = userName;
+            }
+        });
+        
+        // Аватарка (из context.userAvatar)
+        if (context.userAvatar) {
+            userAvaBlocks.forEach(el => {
+                el.innerHTML = `<img src="${context.userAvatar}" style="width:100%;height:100%;object-fit:cover;">`;
+            });
+        } else {
+            userAvaBlocks.forEach(el => {
+                el.innerText = userName[0].toUpperCase();
+            });
+        }
+    } catch(e) {}
 }
 
 function spawnAmbient() {
@@ -479,6 +512,7 @@ jQuery(() => {
     injectSideDock();
     setInterval(spawnAmbient, 2200);
     eventSource.on(event_types.CHARACTER_MESSAGE_RENDERED, parseAiStatus);
+    eventSource.on(event_types.USER_MESSAGE_RENDERED, updateChar);
     eventSource.on(event_types.CHAT_CHANGED, () => {
         updateChar();
         parseAiStatus('');
